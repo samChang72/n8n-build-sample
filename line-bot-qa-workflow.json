@@ -1,0 +1,109 @@
+{
+    "nodes": [
+      {
+        "id": "line_webhook",
+        "parameters": {
+          "path": "linebot-webhook",
+          "options": {
+            "responseMode": "onReceived"
+          }
+        },
+        "name": "LINE Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [200, 300],
+        "webhookId": "12345678-abcd-efgh-ijkl-1234567890"
+      },
+      {
+        "id": "parse_line_json",
+        "parameters": {
+          "functionCode": "const event = items[0].json.events[0];\nreturn [{\n  json: {\n    userMessage: event.message.text,\n    replyToken: event.replyToken,\n    userId: event.source.userId\n  }\n}];"
+        },
+        "name": "Parse LINE JSON",
+        "type": "n8n-nodes-base.function",
+        "typeVersion": 1,
+        "position": [400, 300]
+      },
+      {
+        "id": "anythingllm_api",
+        "parameters": {
+          "authentication": "predefinedCredentialType",
+          "url": "http://your-anythingllm-host/api/v1/chat",
+          "method": "POST",
+          "jsonParameters": true,
+          "options": {},
+          "bodyParametersJson": "={\n  \"message\": \"{{$json[\"userMessage\"]}}\",\n  \"overrideModel\": \"gpt-3.5-turbo\"\n}"
+        },
+        "name": "AnythingLLM",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 2,
+        "position": [600, 300],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "your-anythingllm-credential-id",
+            "name": "AnythingLLM Token"
+          }
+        }
+      },
+      {
+        "id": "reply_to_line",
+        "parameters": {
+          "authentication": "predefinedCredentialType",
+          "url": "https://api.line.me/v2/bot/message/reply",
+          "method": "POST",
+          "jsonParameters": true,
+          "options": {},
+          "bodyParametersJson": "={\n  \"replyToken\": \"{{$json[\"replyToken\"]}}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{$node[\"AnythingLLM\"].json.response}}\"\n    }\n  ]\n}"
+        },
+        "name": "Reply to LINE",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 2,
+        "position": [800, 300],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "your-line-header-auth-id",
+            "name": "LINE Access Token"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "LINE Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse LINE JSON",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse LINE JSON": {
+        "main": [
+          [
+            {
+              "node": "AnythingLLM",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AnythingLLM": {
+        "main": [
+          [
+            {
+              "node": "Reply to LINE",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {},
+    "name": "LINE Bot with AnythingLLM"
+  }
+  
