@@ -1,4 +1,3 @@
-# n8n-build-sample
 # n8n macOS 自架完整教學
 
 ## ✅ 環境需求
@@ -19,7 +18,60 @@
 
 ---
 
-## 🔧 .env 設定檔
+## 📝 建立 .env 檔案（macOS 指令）
+
+進入專案資料夾並建立 `.env` 檔：
+
+```bash
+mkdir -p ~/n8n && cd ~/n8n
+cat << EOF > .env
+GENERIC_TIMEZONE=Asia/Taipei
+N8N_BASIC_AUTH_ACTIVE=true
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=yourStrongPassword
+N8N_SECURE_COOKIE=false
+N8N_HOST=0.0.0.0
+N8N_PORT=5678
+EOF
+```
+
+---
+
+## 📝 建立 docker-compose.yml 檔案（macOS 指令）
+
+```bash
+cat << EOF > docker-compose.yml
+version: '3.7'
+
+services:
+  n8n:
+    image: n8nio/n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=\${GENERIC_TIMEZONE}
+      - N8N_BASIC_AUTH_ACTIVE=\${N8N_BASIC_AUTH_ACTIVE}
+      - N8N_BASIC_AUTH_USER=\${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=\${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_SECURE_COOKIE=\${N8N_SECURE_COOKIE}
+      - N8N_HOST=\${N8N_HOST}
+      - N8N_PORT=\${N8N_PORT}
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          memory: 512M
+EOF
+```
+
+---
+
+## 🔧 .env 設定檔內容
 
 ```env
 GENERIC_TIMEZONE=Asia/Taipei
